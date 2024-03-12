@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+    <meta charset="UTF-8">
+    <title>Databáze zaměstnanců</title>
+    <link rel="stylesheet" href="styles.css"> <!-- Propojení souboru s CSS pro styly -->
+    <style>
+        body {
+            text-align: center; /* Zarovnání textu na střed */
+            background-image: url('https://cdnimage.ebn.co.kr/news/201701/news_1484807906_872685_main1.jpg'); /* Stejné pozadí jako v index.html */
+            background-size: 100% auto; /* Zvětšení obrázku na 100% šířky */
+            background-position: top center; /* Začátek obrázku od horní části */
+            overflow: hidden; /* Zabraňuje posunutí pozadí */
+            color: #042d57; /* Barva textu */
+            margin: 0;
+            padding: 0;
+            font-size: 16px;
+        }
+
+        .blurry-background {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            backdrop-filter: blur(5px); /* Rozmazání pozadí */
+            z-index: -1; /* Zajistí, aby pozadí bylo pod obsahem */
+        }
+
+        .content {
+            position: relative;
+            z-index: 1;
+            background-color: rgba(255, 255, 255, 0.8); /* Průhledné bílé pozadí */
+            padding: 20px; /* Odsazení obsahu */
+            border: 2px solid #042d57; /* Ohraničení obdélníkem */
+            width: 60%; /* Šířka obsahu */
+            margin: 50px auto; /* Zarovnání na střed */
+        }
+
+        #searchBar {
+            display: flex; /* Rozložení prvků vedle sebe */
+            justify-content: center; /* Zarovnání na střed */
+            align-items: center; /* Zarovnání na střed */
+            margin-bottom: 20px; /* Mezera mezi vyhledávacím pruhem a tabulkou */
+        }
+
+        #searchBar input[type="text"] {
+            font-size: 1.2em; /* Velikost písma */
+            padding: 10px; /* Odsazení */
+            margin-right: 10px; /* Mezera mezi prvky */
+        }
+
+        #searchButton {
+            font-size: 1.2em; /* Velikost písma */
+            padding: 10px 20px; /* Odsazení */
+        }
+
+        #employeeTable {
+            border-collapse: collapse; /* Sloučení okrajů buněk */
+            width: 100%; /* 100% šířka tabulky */
+            color: #042d57; /* Barva textu */
+        }
+
+        #employeeTable th, #employeeTable td {
+            border: 2px solid #042d57; /* Ohraničení buněk */
+            padding: 25px; /* Odsazení */
+            text-align: left; /* Zarovnání textu v buňkách vlevo */
+        }
+
+        #employeeTable th {
+            background-color: #ffffff; /* Barva pozadí */
+        }
+
+        #employeeTable td {
+            background-color: transparent; /* Průhledné pozadí */
+        }
+
+        #employeeTable td:last-child {
+            margin-right: 0; /* Odstranění pravého okraje pro poslední sloupec */
+        }
+    </style>
+</head>
+<body>
+    <div class="blurry-background"></div>
+    <div class="content">
+        <h1 style="font-size: 4.7em; font-weight: bold;">Databáze zaměstnanců</h1>
+        
+        <!-- Vyhledávací pruh -->
+        <div id="searchBar">
+            <input type="text" id="searchName" name="searchName" placeholder="Jméno">
+            <input type="text" id="searchSurname" name="searchSurname" placeholder="Příjmení">
+            <button id="searchButton" onclick="search()"><span>Vyhledat</span></button>
+        </div>
+
+        <!-- Tabulka -->
+        <div id="employeeTableContainer">
+            <table id="employeeTable">
+                <thead>
+                    <tr>
+                        <th style="font-size: 1.15em;">Jméno</th>
+                        <th style="font-size: 1.15em;">Příjmení</th> <!-- Nový sloupec pro příjmení -->
+                        <th style="font-size: 1.15em;">Pracovní doba</th>
+                        <th style="font-size: 1.15em;">Datum</th>
+                        <th style="font-size: 1.15em;">Pozice</th> <!-- Nový sloupec pro pozici -->
+                        <th style="font-size: 1.15em;">Akce</th>
+                    </tr>
+                </thead>
+                <tbody id="employeeTableBody">
+                    <!-- Zde budou zobrazeny záznamy z Local Storage -->
+                </tbody>
+            </table>
+        </div>
+
+        <button onclick="window.location.href='index.html'" style="margin-top: 14px; font-size: 2.1em;">Zpět na formulář</button>
+    </div>
+
+    <script>
+        // Získání uložených dat z Local Storage
+        var employees = JSON.parse(localStorage.getItem('employees')) || [];
+        var tableBody = document.getElementById('employeeTableBody');
+
+        // Vykreslení záznamů z Local Storage do tabulky
+        function renderTable() {
+            tableBody.innerHTML = '';
+            employees.forEach(function(employee) {
+                var newRow = document.createElement('tr');
+                newRow.innerHTML = '<td>' + employee.jmeno + '</td><td>' + employee.prijmeni + '</td><td>' + employee.pracovni_doba + '</td><td>' + employee.datum + '</td>' +
+                    '<td>' + employee.pozice + '</td>' +
+                    '<td><button class="editButton" onclick="editRow()">Upravit</button>' +
+                    '<button class="deleteButton" onclick="deleteRow()">Vymazat</button></td>';
+                tableBody.appendChild(newRow);
+            });
+        }
+        
+        renderTable();
+
+        // Funkce pro smazání řádku
+        function deleteRow(index) {
+            // Odstranění záznamu z pole
+            employees.splice(index, 1);
+            // Aktualizace Local Storage
+            localStorage.setItem('employees', JSON.stringify(employees));
+            // Aktualizace zobrazení v tabulce
+            renderTable();
+        }
+
+        // Funkce pro úpravu řádku
+        function editRow(index) {
+            var fieldToEdit = prompt('Vyberte, kterou položku chcete upravit: JMÉNO, PŘÍJMENÍ, PRACOVNÍ DOBA, DATUM, POZICE');
+
+            if (!fieldToEdit) return; // Pokud uživatel zruší prompt, nic se neděje
+
+            var newValue;
+
+            // Upravení vybrané položky
+            switch (fieldToEdit.toUpperCase()) {
+                case 'JMÉNO':
+                    newValue = prompt('Zadejte nové jméno:', employees[index].jmeno);
+                    employees[index].jmeno = newValue || employees[index].jmeno;
+                    break;
+                case 'PŘÍJMENÍ':
+                    newValue = prompt('Zadejte nové příjmení:', employees[index].prijmeni);
+                    employees[index].prijmeni = newValue || employees[index].prijmeni;
+                    break;
+                case 'PRACOVNÍ DOBA':
+                    newValue = prompt('Zadejte novou pracovní dobu:', employees[index].pracovni_doba);
+                    employees[index].pracovni_doba = newValue || employees[index].pracovni_doba;
+                    break;
+                case 'DATUM':
+                    newValue = prompt('Zadejte nové datum:', employees[index].datum);
+                    employees[index].datum = newValue || employees[index].datum;
+                    break;
+                case 'POZICE':
+                    newValue = prompt('Zadejte novou pozici:', employees[index].pozice);
+                    employees[index].pozice = newValue || employees[index].pozice;
+                    break;
+                default:
+                    alert('Neplatná volba.');
+            }
+
+            // Aktualizace zobrazení v tabulce
+            renderTable();
+        }
+
+        // Funkce pro vyhledávání
+        function search() {
+            var searchName = document.getElementById('searchName').value.trim().toLowerCase();
+            var searchSurname = document.getElementById('searchSurname').value.trim().toLowerCase();
+            var filteredEmployees = employees.filter(function(employee) {
+                return (searchName === '' || employee.jmeno.toLowerCase().includes(searchName)) && 
+                       (searchSurname === '' || employee.prijmeni.toLowerCase().includes(searchSurname));
+            });
+            // Aktualizace zobrazení v tabulce s filtrovanými záznamy
+            renderFilteredTable(filteredEmployees);
+        }
+
+        // Funkce pro vykreslení filtrované tabulky
+        function renderFilteredTable(filteredEmployees) {
+            tableBody.innerHTML = '';
+            filteredEmployees.forEach(function(employee) {
+                var newRow = document.createElement('tr');
+                newRow.innerHTML = '<td>' + employee.jmeno + '</td><td>' + employee.prijmeni + '</td><td>' + employee.pracovni_doba + '</td><td>' + employee.datum + '</td>' +
+                    '<td>' + employee.pozice + '</td>' +
+                    '<td><button class="editButton" onclick="editRow()">Upravit</button>' +
+                    '<button class="deleteButton" onclick="deleteRow()">Vymazat</button></td>';
+                tableBody.appendChild(newRow);
+            });
+        }
+    </script>
+</body>
+</html>
